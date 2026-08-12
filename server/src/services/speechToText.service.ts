@@ -19,7 +19,7 @@ export class SpeechToTextService {
     this.openai = createAiClient();
 
     if (!this.openai) {
-      logger.warn("SpeechToTextService: GROK_API_KEY is not configured.");
+      logger.warn("SpeechToTextService: API key is not configured.");
     }
   }
 
@@ -31,7 +31,7 @@ export class SpeechToTextService {
       return {
         success: false,
         reason: "NO_API_KEY",
-        message: "Grok API key is missing or not configured on the server.",
+        message: "API key is missing or not configured on the server.",
       };
     }
 
@@ -58,7 +58,8 @@ export class SpeechToTextService {
       const transcription = await this.openai.audio.transcriptions.create({
         file,
         model: this.sttModel,
-        prompt: "Health screening intake call transcript in English or Hindi (हिन्दी).",
+        language: "en",
+        prompt: "Health screening intake call transcript in English.",
       });
 
       const transcript = transcription.text ? transcription.text.trim() : "";
@@ -82,7 +83,7 @@ export class SpeechToTextService {
       return {
         success: false,
         reason: "STT_ERROR",
-        message: error?.message || "Failed to process audio transcription with Grok Engine.",
+        message: error?.message || "Failed to process audio transcription.",
       };
     }
   }

@@ -63,7 +63,7 @@ export const CallInterface: React.FC<CallInterfaceProps> = ({
             <p className="text-xs text-amber-400 animate-pulse">Initializing voice session...</p>
           )}
           {status === "listening" && (
-            <p className="text-xs text-teal-300 font-medium">Listening... Speak in English or Hindi</p>
+            <p className="text-xs text-teal-300 font-medium">Listening... Speak in English</p>
           )}
           {status === "recording" && (
             <p className="text-xs text-rose-300 font-semibold animate-pulse">

@@ -2,10 +2,12 @@
 
 Full-stack voice screening agent built with React, Node.js, Express, and Socket.io. Uses OpenAI Whisper for STT and Groq/Grok LLM for turn-based clinical voice intake and report generation.
 
+**Live Demo**: [https://ai-health-screening-voice-agent-cli.vercel.app](https://ai-health-screening-voice-agent-cli.vercel.app)
+
 ## Features
 
 - Real-time turn-based voice intake over WebSockets (Socket.io)
-- Auto language support (English & Hindi)
+- English voice assistant intake
 - Live audio waveform visualizer (Web Audio API)
 - Barge-in / speech interruption support
 - Structured health state tracking across conversation turns

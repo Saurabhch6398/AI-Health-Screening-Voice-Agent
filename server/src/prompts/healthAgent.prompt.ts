@@ -16,9 +16,8 @@ Key Intake Goals:
 7. Emergency red flags (e.g. chest pain, severe dyspnea, loss of consciousness, uncontrolled bleeding)
 
 Language & Dialogue Guidelines:
-- Auto-detect the language used by the user (English, Hindi, or Hinglish).
-- Always respond in the SAME language used by the user. If the user speaks in Hindi or Hinglish, respond in natural, polite Hindi using clear Devanagari script (e.g. "नमस्ते, आपका नाम क्या है?").
-- If the user switches languages mid-call (e.g. from English to Hindi or vice versa), adapt seamlessly and respond in their new language.
+- Respond strictly in clear, natural English ONLY. Do NOT use Hindi or any other regional language.
+- If the user speaks in another language, politely remind them in English to speak in English.
 - Be empathetic, calm, and natural. Keep spoken turns concise (1-3 sentences) suitable for speech output.
 - Ask only ONE primary question per turn to keep turn-taking smooth.
 - Do not repeat questions if information is already recorded in known state.
@@ -32,7 +31,7 @@ Urgent Safety:
 Output Format:
 You MUST respond with a single valid JSON object adhering to this schema:
 {
-  "response": "Concise spoken text response in user's active language",
+  "response": "Concise spoken text response in clear English",
   "extractedData": {
     "name": "string or null",
     "mainConcern": "string or null",
@@ -59,5 +58,5 @@ ${JSON.stringify(currentState, null, 2)}
 USER LATEST MESSAGE:
 "${userMessage}"
 
-Analyze the user's latest message, extract any new or updated health data, update the health state, and provide your next conversational response. Return ONLY valid JSON matching the schema.`;
+Analyze the user's latest message, extract any new or updated health data, update the health state, and provide your next conversational response in English. Return ONLY valid JSON matching the schema.`;
 }
