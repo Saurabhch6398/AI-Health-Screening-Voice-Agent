@@ -114,3 +114,4 @@ This runs the frontend dev server (`http://localhost:5173`) and the backend Expr
 - **Pipeline Architecture**: Clean abstraction of STT -> LLM -> TTS services. Check out the handlers in `server/src/socket/callHandler.ts` and config routing in `server/src/utils/aiConfig.ts`.
 - **State Management**: Review `server/src/session/sessionManager.ts` to see how incoming clinical parameters are merged during the call.
 - **Barge-in Support**: The client audio player instantly halts playback and clears queues whenever the user clicks "Tap to Speak" or starts talking during the assistant's speech.
+
