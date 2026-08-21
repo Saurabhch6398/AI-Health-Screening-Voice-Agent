@@ -63,7 +63,7 @@ server.listen(PORT, () => {
   logger.info(`Allowed CORS origin: ${CLIENT_URL}`);
   
   if (!config.apiKey) {
-    logger.warn("GROK_API_KEY is not set in environment variables.");
+    logger.warn("Neither OPENAI_API_KEY, GROQ_API_KEY, nor GROK_API_KEY is set in environment variables.");
   } else {
     logger.info(`AI Provider: ${config.providerName} [Model: ${config.model}]`);
   }

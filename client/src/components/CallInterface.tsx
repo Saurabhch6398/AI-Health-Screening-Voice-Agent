@@ -10,6 +10,8 @@ interface CallInterfaceProps {
   isRecording: boolean;
   isSpeaking: boolean;
   visualizerData: Uint8Array;
+  language: "en" | "hi" | "auto";
+  setLanguage: (lang: "en" | "hi" | "auto") => void;
   onStartCall: () => void;
   onStartRecording: () => void;
   onStopRecording: () => void;
@@ -22,6 +24,8 @@ export const CallInterface: React.FC<CallInterfaceProps> = ({
   isRecording,
   isSpeaking,
   visualizerData,
+  language,
+  setLanguage,
   onStartCall,
   onStartRecording,
   onStopRecording,
@@ -48,39 +52,91 @@ export const CallInterface: React.FC<CallInterfaceProps> = ({
         <CallStatusBadge status={status} isConnected={isConnected} />
       </div>
 
-      <div className="my-6 flex flex-col items-center justify-center space-y-4 w-full">
+      <div className="my-4 flex flex-col items-center justify-center space-y-4 w-full">
         <VoiceVisualizer
           isRecording={isRecording}
           isSpeaking={isSpeaking}
           visualizerData={visualizerData}
         />
 
+        {status === "idle" && (
+          <div className="flex items-center gap-2 bg-slate-950/50 p-1.5 rounded-xl border border-slate-800/80 mb-2">
+            <span className="text-[11px] font-semibold text-slate-400 pl-2 uppercase tracking-wide">Language:</span>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setLanguage("en")}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                  language === "en"
+                    ? "bg-teal-500 text-slate-950"
+                    : "text-slate-400 hover:bg-slate-800/60"
+                }`}
+              >
+                English
+              </button>
+              <button
+                onClick={() => setLanguage("hi")}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                  language === "hi"
+                    ? "bg-teal-500 text-slate-950"
+                    : "text-slate-400 hover:bg-slate-800/60"
+                }`}
+              >
+                हिन्दी
+              </button>
+              <button
+                onClick={() => setLanguage("auto")}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                  language === "auto"
+                    ? "bg-teal-500 text-slate-950"
+                    : "text-slate-400 hover:bg-slate-800/60"
+                }`}
+              >
+                Auto Detect
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="text-center h-6">
           {status === "idle" && (
-            <p className="text-xs text-slate-400">Click "Start Call" to begin screening</p>
+            <p className="text-xs text-slate-400">
+              {language === "hi" ? "शुरू करने के लिए \"Start Call\" दबाएं" : "Choose language and click \"Start Call\" to begin"}
+            </p>
           )}
           {status === "connecting" && (
-            <p className="text-xs text-amber-400 animate-pulse">Initializing voice session...</p>
+            <p className="text-xs text-amber-400 animate-pulse">
+              {language === "hi" ? "कॉल स्थापित की जा रही है..." : "Initializing voice session..."}
+            </p>
           )}
           {status === "listening" && (
-            <p className="text-xs text-teal-300 font-medium">Listening... Speak in English</p>
+            <p className="text-xs text-teal-300 font-medium">
+              {language === "hi" ? "सुन रहे हैं... हिन्दी में बोलें" : language === "auto" ? "Listening... Speak in English or हिन्दी" : "Listening... Speak in English"}
+            </p>
           )}
           {status === "recording" && (
             <p className="text-xs text-rose-300 font-semibold animate-pulse">
-              Listening... Auto-submits after silence (or tap to send)
+              {language === "hi" ? "रिकॉर्डिंग... मौन होने पर स्वतः सबमिट होगा" : "Listening... Auto-submits after silence (or tap to send)"}
             </p>
           )}
           {status === "processing" && (
-            <p className="text-xs text-indigo-300 animate-pulse">Processing response...</p>
+            <p className="text-xs text-indigo-300 animate-pulse">
+              {language === "hi" ? "संसाधित किया जा रहा है..." : "Processing response..."}
+            </p>
           )}
           {status === "speaking" && (
-            <p className="text-xs text-cyan-300">Speaking...</p>
+            <p className="text-xs text-cyan-300">
+              {language === "hi" ? "सहायक बोल रहा है..." : "Speaking..."}
+            </p>
           )}
           {status === "ending" && (
-            <p className="text-xs text-amber-300 animate-pulse">Generating summary report...</p>
+            <p className="text-xs text-amber-300 animate-pulse">
+              {language === "hi" ? "रिपोर्ट तैयार की जा रही है..." : "Generating summary report..."}
+            </p>
           )}
           {status === "ended" && (
-            <p className="text-xs text-emerald-400 font-medium">Screening finished. Review report below.</p>
+            <p className="text-xs text-emerald-400 font-medium">
+              {language === "hi" ? "स्क्रीनिंग समाप्त। नीचे रिपोर्ट देखें।" : "Screening finished. Review report below."}
+            </p>
           )}
         </div>
 

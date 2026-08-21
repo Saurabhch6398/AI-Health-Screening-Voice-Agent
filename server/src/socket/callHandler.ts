@@ -23,14 +23,15 @@ export function registerCallHandlers(
   logger.info(`Socket client connected: ${socket.id}`);
 
   socket.on("start_call", async (payload: StartCallPayload) => {
-    const { sessionId } = payload;
-    logger.info(`[Socket ${socket.id}] start_call received for session: ${sessionId}`);
+    const { sessionId, language } = payload;
+    const selectedLanguage = language || "en";
+    logger.info(`[Socket ${socket.id}] start_call received for session: ${sessionId}, language: ${selectedLanguage}`);
 
     socket.emit("call_status", { status: "connecting" });
 
     try {
-      const session = sessionManager.createSession(sessionId);
-      const greeting = conversationService.getInitialGreeting();
+      const session = sessionManager.createSession(sessionId, selectedLanguage);
+      const greeting = conversationService.getInitialGreeting(selectedLanguage);
       sessionManager.addMessage(session.id, "assistant", greeting.message);
 
       const ttsResult = await ttsService.generateSpeech(greeting.message);
@@ -39,6 +40,7 @@ export function registerCallHandlers(
         sessionId: session.id,
         assistantMessage: greeting.message,
         audio: ttsResult.audioBase64,
+        callState: session.callState,
       });
 
       socket.emit("call_status", { status: "speaking" });
@@ -84,23 +86,39 @@ export function registerCallHandlers(
         audioBuffer = Buffer.from(audio as any);
       }
 
-      const sttResult = await sttService.transcribeAudio(audioBuffer, mimeType);
+      // Pass the session language to the transcription service
+      const sttResult = await sttService.transcribeAudio(audioBuffer, mimeType, session.language);
 
       if (!sttResult.success) {
+        let errorMsg = "Sorry, I had trouble understanding the audio. Please try again.";
         if (sttResult.reason === "NO_SPEECH") {
-          socket.emit("call_error", {
-            code: "NO_SPEECH",
-            message: "I didn't catch that. Please try speaking again.",
-            recoverable: true,
-          });
-        } else {
-          socket.emit("call_error", {
-            code: "STT_FAILED",
-            message: sttResult.message || "Sorry, I had trouble understanding the audio. Please try again.",
-            recoverable: true,
-          });
+          errorMsg = session.language === "hi"
+            ? "मुझे आपकी आवाज़ सुनाई नहीं दी। कृपया फिर से बोलें।"
+            : "I didn't catch that. Please try speaking again.";
+        } else if (session.language === "hi") {
+          errorMsg = "मुझे समझने में कुछ समस्या हुई। कृपया फिर से प्रयास करें।";
         }
-        socket.emit("call_status", { status: "listening" });
+
+        logger.warn(`STT failed for session ${sessionId}: ${sttResult.reason}. Speaking failure response.`);
+        const ttsResult = await ttsService.generateSpeech(errorMsg);
+
+        // Speak the error message back to keep the conversation going
+        socket.emit("assistant_response", {
+          message: errorMsg,
+          audio: ttsResult.audioBase64,
+          state: session.healthData,
+          nextAction: "continue",
+          callState: session.callState,
+          isSpeechError: true,
+        });
+
+        socket.emit("call_error", {
+          code: sttResult.reason || "STT_FAILED",
+          message: errorMsg,
+          recoverable: true,
+        });
+
+        socket.emit("call_status", { status: "speaking" });
         return;
       }
 
@@ -116,17 +134,38 @@ export function registerCallHandlers(
         audio: ttsResult.audioBase64,
         state: convResult.state,
         nextAction: convResult.nextAction,
+        callState: convResult.callState,
       });
 
       socket.emit("call_status", { status: "speaking" });
     } catch (error: any) {
       logger.error(`Error processing user_audio for session ${sessionId}:`, error);
+      
+      const errMessage = session.language === "hi"
+        ? "मुझे आपकी बात संसाधित करने में समस्या हो रही है। कृपया पुनः प्रयास करें।"
+        : "An unexpected error occurred while processing your speech. Please try again.";
+      
+      let ttsResult: any = { success: false };
+      try {
+        ttsResult = await ttsService.generateSpeech(errMessage);
+      } catch (ttsErr) {
+        logger.error("Error generating speech for processing error:", ttsErr);
+      }
+      
+      socket.emit("assistant_response", {
+        message: errMessage,
+        audio: ttsResult.audioBase64,
+        state: session.healthData,
+        nextAction: "continue",
+        callState: session.callState,
+      });
+
       socket.emit("call_error", {
         code: "PROCESSING_FAILED",
-        message: "An unexpected error occurred while processing your speech.",
+        message: errMessage,
         recoverable: true,
       });
-      socket.emit("call_status", { status: "listening" });
+      socket.emit("call_status", { status: "speaking" });
     }
   });
 

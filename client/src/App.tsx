@@ -15,6 +15,7 @@ export function App() {
     setStatus,
     messages,
     healthState,
+    callState,
     report,
     error,
     latestAudio,
@@ -24,6 +25,8 @@ export function App() {
     resetCall,
     clearError,
   } = useSocket();
+
+  const [language, setLanguage] = React.useState<"en" | "hi" | "auto">("en");
 
   const {
     isRecording,
@@ -92,11 +95,17 @@ export function App() {
           </div>
 
           <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-400 animate-pulse" : "bg-red-400"}`} />
-            <span>{isConnected ? "Server Connected" : "Connecting..."}</span>
+            <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-emerald-400 animate-pulse" : "bg-rose-500 animate-ping"}`} />
+            <span>{isConnected ? "Server Connected" : "Connection Interrupted"}</span>
           </div>
         </div>
       </header>
+
+      {!isConnected && (
+        <div className="w-full bg-rose-950/80 border-b border-rose-800/60 text-rose-300 text-xs py-2 text-center font-semibold animate-pulse z-40">
+          ⚠️ Connection interrupted. Reconnecting to backend server...
+        </div>
+      )}
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col space-y-6">
         <div className="w-full bg-slate-900/60 rounded-2xl border border-slate-800/80 p-6 backdrop-blur-md shadow-lg space-y-4">
@@ -130,7 +139,7 @@ export function App() {
               : error
           }
           onDismiss={clearError}
-          onRetry={status === "error" ? startCall : undefined}
+          onRetry={status === "error" ? () => startCall(language) : undefined}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -141,7 +150,9 @@ export function App() {
               isRecording={isRecording}
               isSpeaking={isPlaying}
               visualizerData={visualizerData}
-              onStartCall={startCall}
+              language={language}
+              setLanguage={setLanguage}
+              onStartCall={() => startCall(language)}
               onStartRecording={handleStartRecording}
               onStopRecording={handleStopRecording}
               onEndCall={endCall}
@@ -149,7 +160,7 @@ export function App() {
           </div>
 
           <div className="lg:col-span-7 w-full h-[480px]">
-            <ConversationTranscript messages={messages} healthState={healthState} />
+            <ConversationTranscript messages={messages} healthState={healthState} callState={callState} />
           </div>
         </div>
 

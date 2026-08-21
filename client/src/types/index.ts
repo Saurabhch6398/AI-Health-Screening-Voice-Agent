@@ -11,6 +11,8 @@ export type CallStatus =
 
 export type NextAction = "continue" | "clarify" | "complete" | "escalate";
 
+export type CallState = "GREETING" | "COLLECTING" | "FOLLOW_UP" | "COMPLETED" | "EMERGENCY";
+
 export interface HealthScreeningState {
   name: string | null;
   mainConcern: string | null;

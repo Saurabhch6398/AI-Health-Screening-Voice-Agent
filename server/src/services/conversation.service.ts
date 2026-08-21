@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { CallSession, HealthScreeningState, NextAction } from "../types/health.js";
+import { CallSession, HealthScreeningState, NextAction, CallState } from "../types/health.js";
 import { HEALTH_AGENT_SYSTEM_PROMPT, buildAgentUserPrompt } from "../prompts/healthAgent.prompt.js";
 import { SessionManager } from "../session/sessionManager.js";
 import { createAiClient, getAiConfig } from "../utils/aiConfig.js";
@@ -10,6 +10,7 @@ export interface ConversationResult {
   message: string;
   state: HealthScreeningState;
   nextAction: NextAction;
+  callState: CallState;
   error?: string;
 }
 
@@ -29,9 +30,15 @@ export class ConversationService {
     }
   }
 
-  public getInitialGreeting(): { message: string; state: HealthScreeningState } {
-    const greeting =
+  public getInitialGreeting(language: "en" | "hi" | "auto" = "en"): { message: string; state: HealthScreeningState } {
+    let greeting =
       "Hello, I'm your AI health screening assistant. I'll ask you a few basic questions to better understand your concern. Please note that I cannot provide a diagnosis. To begin, could you please tell me your name?";
+
+    if (language === "hi") {
+      greeting = "नमस्ते, मैं आपका एआई स्वास्थ्य जांच सहायक हूँ। मैं आपकी समस्या को बेहतर ढंग से समझने के लिए आपसे कुछ बुनियादी सवाल पूछूँगा। कृपया ध्यान दें कि मैं कोई चिकित्सा निदान प्रदान नहीं कर सकता। शुरू करने के लिए, क्या आप मुझे अपना नाम बता सकते हैं?";
+    } else if (language === "auto") {
+      greeting = "Hello, I'm your AI health screening assistant. I will ask you a few basic questions. To begin, could you please tell me your name? आप अपना नाम हिंदी या अंग्रेजी में बता सकते हैं।";
+    }
 
     return {
       message: greeting,
@@ -63,14 +70,15 @@ export class ConversationService {
         message: fallbackMsg,
         state: session.healthData,
         nextAction: "continue",
+        callState: session.callState,
       };
     }
 
     try {
       const systemPrompt = HEALTH_AGENT_SYSTEM_PROMPT;
-      const userPrompt = buildAgentUserPrompt(session.healthData, userTranscript);
+      const userPrompt = buildAgentUserPrompt(session.healthData, session.callState, session.language, userTranscript);
 
-      logger.info(`Sending conversation payload to ${this.model} (Session ${session.id})...`);
+      logger.info(`Sending conversation payload to ${this.model} (Session ${session.id}, State: ${session.callState}, Lang: ${session.language})...`);
 
       const completion = await this.openai.chat.completions.create({
         model: this.model,
@@ -93,6 +101,16 @@ export class ConversationService {
       const responseText = parsed.response || "Thank you. Could you tell me more about how you are feeling?";
       const extractedData = parsed.extractedData || {};
       const nextAction: NextAction = parsed.nextAction || "continue";
+      const newCallState: CallState = parsed.callState || session.callState;
+
+      // Update callState in session
+      session.callState = newCallState;
+      if (extractedData.screeningComplete === true || nextAction === "complete") {
+        session.callState = "COMPLETED";
+        extractedData.screeningComplete = true;
+      } else if (nextAction === "escalate") {
+        session.callState = "EMERGENCY";
+      }
 
       // Update structured state
       const updatedState = this.sessionManager.updateHealthState(session.id, extractedData) || session.healthData;
@@ -105,13 +123,16 @@ export class ConversationService {
         message: responseText,
         state: updatedState,
         nextAction,
+        callState: session.callState,
       };
     } catch (error: any) {
       logger.error("ConversationService error:", error?.message || error);
 
-      // Safe fallback response
+      // Safe fallback response based on selected language
       const fallbackMsg =
-        "I'm sorry, I had trouble processing that response. Could you please repeat what you said?";
+        session.language === "hi"
+          ? "मुझे खेद है, मुझे उस प्रतिक्रिया को संसाधित करने में समस्या हुई। क्या आप कृपया अपनी बात दोहरा सकते हैं?"
+          : "I'm sorry, I had trouble processing that response. Could you please repeat what you said?";
       this.sessionManager.addMessage(session.id, "assistant", fallbackMsg);
 
       return {
@@ -119,6 +140,7 @@ export class ConversationService {
         message: fallbackMsg,
         state: session.healthData,
         nextAction: "continue",
+        callState: session.callState,
         error: error?.message || "Failed to process LLM request.",
       };
     }

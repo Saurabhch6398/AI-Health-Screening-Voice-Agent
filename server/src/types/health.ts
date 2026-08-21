@@ -17,13 +17,18 @@ export interface ConversationMessage {
   timestamp: string;
 }
 
+export type CallState = "GREETING" | "COLLECTING" | "FOLLOW_UP" | "COMPLETED" | "EMERGENCY";
+
 export interface CallSession {
   id: string;
   status: "active" | "ended";
   createdAt: string;
   messages: ConversationMessage[];
   healthData: HealthScreeningState;
+  callState: CallState;
+  language: "en" | "hi" | "auto";
 }
+
 
 export interface HealthReport {
   screeningStatus: "complete" | "partial" | "limited";
@@ -56,6 +61,7 @@ export type NextAction = "continue" | "clarify" | "complete" | "escalate";
 
 export interface StartCallPayload {
   sessionId: string;
+  language?: "en" | "hi" | "auto";
 }
 
 export interface UserAudioPayload {

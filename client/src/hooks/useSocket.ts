@@ -7,6 +7,7 @@ import {
   HealthReport,
   ErrorMessageData,
   NextAction,
+  CallState,
 } from "../types";
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:5001";
@@ -34,6 +35,7 @@ export function useSocket() {
   const [report, setReport] = useState<HealthReport | null>(null);
   const [error, setError] = useState<ErrorMessageData | null>(null);
   const [latestAudio, setLatestAudio] = useState<string | null>(null);
+  const [callState, setCallState] = useState<CallState>("GREETING");
 
   const socketRef = useRef<Socket | null>(null);
 
@@ -71,10 +73,13 @@ export function useSocket() {
       setStatus(data.status);
     });
 
-    s.on("call_started", (data: { sessionId: string; assistantMessage: string; audio?: string }) => {
+    s.on("call_started", (data: { sessionId: string; assistantMessage: string; audio?: string; callState?: CallState }) => {
       console.log("[Socket] Call started:", data.sessionId);
       setSessionId(data.sessionId);
       setError(null);
+      if (data.callState) {
+        setCallState(data.callState);
+      }
 
       const msg: ConversationMessage = {
         id: `msg-${Date.now()}-assistant`,
@@ -103,7 +108,7 @@ export function useSocket() {
 
     s.on(
       "assistant_response",
-      (data: { message: string; audio?: string; state: HealthScreeningState; nextAction: NextAction }) => {
+      (data: { message: string; audio?: string; state: HealthScreeningState; nextAction: NextAction; callState?: CallState }) => {
         console.log("[Socket] Assistant response:", data.message);
         const msg: ConversationMessage = {
           id: `msg-${Date.now()}-assistant`,
@@ -115,6 +120,10 @@ export function useSocket() {
 
         if (data.state) {
           setHealthState(data.state);
+        }
+
+        if (data.callState) {
+          setCallState(data.callState);
         }
 
         if (data.audio) {
@@ -139,18 +148,19 @@ export function useSocket() {
     };
   }, []);
 
-  const startCall = useCallback(() => {
+  const startCall = useCallback((language: "en" | "hi" | "auto" = "en") => {
     const newSessionId = `session-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
     setSessionId(newSessionId);
     setMessages([]);
     setHealthState(initialHealthState);
+    setCallState("GREETING");
     setReport(null);
     setError(null);
     setLatestAudio(null);
     setStatus("connecting");
 
     if (socketRef.current) {
-      socketRef.current.emit("start_call", { sessionId: newSessionId });
+      socketRef.current.emit("start_call", { sessionId: newSessionId, language });
     }
   }, []);
 
@@ -184,6 +194,7 @@ export function useSocket() {
     setSessionId(null);
     setMessages([]);
     setHealthState(initialHealthState);
+    setCallState("GREETING");
     setReport(null);
     setError(null);
     setLatestAudio(null);
@@ -200,6 +211,7 @@ export function useSocket() {
     sessionId,
     messages,
     healthState,
+    callState,
     report,
     error,
     latestAudio,

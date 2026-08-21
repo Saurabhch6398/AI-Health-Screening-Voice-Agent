@@ -27,16 +27,18 @@ export class SessionManager {
     return SessionManager.instance;
   }
 
-  public createSession(id: string): CallSession {
+  public createSession(id: string, language: "en" | "hi" | "auto" = "en"): CallSession {
     const session: CallSession = {
       id,
       status: "active",
       createdAt: new Date().toISOString(),
       messages: [],
       healthData: createInitialState(),
+      callState: "GREETING",
+      language,
     };
     this.sessions.set(id, session);
-    logger.info(`Session created: ${id}`);
+    logger.info(`Session created: ${id} with language: ${language}`);
     return session;
   }
 

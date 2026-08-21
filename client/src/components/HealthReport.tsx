@@ -96,7 +96,7 @@ export const HealthReportCard: React.FC<HealthReportProps> = ({ report, onStartN
               <span>Primary Concern</span>
             </div>
             <p className="text-base font-bold text-slate-100">
-              {report.mainConcern || "Not collected"}
+              {report.mainConcern || "Not provided"}
             </p>
           </div>
 
@@ -106,7 +106,7 @@ export const HealthReportCard: React.FC<HealthReportProps> = ({ report, onStartN
               <span>Duration</span>
             </div>
             <p className="text-base font-bold text-slate-100">
-              {report.duration || "Not specified"}
+              {report.duration || "Not provided"}
             </p>
           </div>
 
@@ -116,7 +116,7 @@ export const HealthReportCard: React.FC<HealthReportProps> = ({ report, onStartN
               <span>Severity Level</span>
             </div>
             <p className="text-base font-bold text-slate-100">
-              {report.severity || "Not specified"}
+              {report.severity || "Not provided"}
             </p>
           </div>
         </div>
